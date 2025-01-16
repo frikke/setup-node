@@ -24,7 +24,7 @@ To ensure that `yarn.lock` is always committed, use `yarn install --immutable` w
 **See also:**
 - [Documentation of `yarn.lock`](https://classic.yarnpkg.com/en/docs/yarn-lock)
 - [Documentation of `--frozen-lockfile` option](https://classic.yarnpkg.com/en/docs/cli/install#toc-yarn-install-frozen-lockfile)
-- [QA - Should lockfiles be committed to the repoistory?](https://yarnpkg.com/getting-started/qa/#should-lockfiles-be-committed-to-the-repository)
+- [QA - Should lockfiles be committed to the repository?](https://yarnpkg.com/getting-started/qa/#should-lockfiles-be-committed-to-the-repository)
 - [Documentation of `yarn install`](https://yarnpkg.com/cli/install)
 
 ### PNPM
@@ -45,8 +45,8 @@ If `check-latest` is set to `true`, the action first checks if the cached versio
 
 ```yaml
 steps:
-- uses: actions/checkout@v3
-- uses: actions/setup-node@v3
+- uses: actions/checkout@v4
+- uses: actions/setup-node@v4
   with:
     node-version: '16'
     check-latest: true
@@ -63,8 +63,8 @@ See [supported version syntax](https://github.com/actions/setup-node#supported-v
 
 ```yaml
 steps:
-- uses: actions/checkout@v3
-- uses: actions/setup-node@v3
+- uses: actions/checkout@v4
+- uses: actions/setup-node@v4
   with:
     node-version-file: '.nvmrc'
 - run: npm ci
@@ -84,6 +84,8 @@ When using the `package.json` input, the action will look for `volta.node` first
 }
 ```
 
+Otherwise, when [`volta.extends`](https://docs.volta.sh/advanced/workspaces) is defined, then it will resolve the corresponding file and look for `volta.node` or `engines.node` recursively.
+
 ## Architecture
 
 You can use any of the [supported operating systems](https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners), and the compatible `architecture` can be selected using `architecture`. Values are `x86`, `x64`, `arm64`, `armv6l`, `armv7l`, `ppc64le`, `s390x` (not all of the architectures are available on all platforms).
@@ -95,14 +97,137 @@ jobs:
     runs-on: windows-latest
     name: Node sample
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '14'
           architecture: 'x64' # optional, x64 or x86. If not specified, x64 will be used by default
       - run: npm ci
       - run: npm test
 ```
+
+## V8 Canary versions
+
+You can specify a nightly version to download it from https://nodejs.org/download/v8-canary.
+
+### Install v8 canary build for specific node version
+
+```yaml
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Node sample
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.0.0-v8-canary' # it will install the latest v8 canary release for node 20.0.0
+      - run: npm ci
+      - run: npm test
+```
+### Install v8 canary build for major node version
+
+```yaml
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Node sample
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20-v8-canary' # it will install the latest v8 canary release for node 20
+      - run: npm ci
+      - run: npm test
+```
+
+### Install the exact v8 canary version
+
+```yaml
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Node sample
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 'v20.1.1-v8-canary20221103f7e2421e91'
+      - run: npm ci
+      - run: npm test
+```
+
+## Nightly versions
+
+You can specify a nightly version to download it from https://nodejs.org/download/nightly. 
+
+### Install the nightly build for a major version
+
+```yaml
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Node sample
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '16-nightly' # it will install the latest nightly release for node 16
+      - run: npm ci
+      - run: npm test
+```
+
+### Install the nightly build for a specific version
+
+```yaml
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Node sample
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '16.0.0-nightly' # it will install the latest nightly release for node 16.0.0
+      - run: npm ci
+      - run: npm test
+```
+
+### Install an exact nightly version
+
+```yaml
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Node sample
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '16.0.0-nightly20210420a0261d231c'
+      - run: npm ci
+      - run: npm test
+```
+
+## RC versions
+
+You can use specify a rc version to download it from https://nodejs.org/download/rc.
+
+```yaml
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Node sample
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '16.0.0-rc.1'
+      - run: npm ci
+      - run: npm test
+```
+
+**Note:** Unlike nightly versions, which support version range specifiers, you must specify the exact version for a release candidate: `16.0.0-rc.1`.
 
 ## Caching packages data
 The action follows [actions/cache](https://github.com/actions/cache/blob/main/examples.md#node---npm) guidelines, and caches global cache on the machine instead of `node_modules`, so cache can be reused between different Node.js versions.
@@ -111,8 +236,8 @@ The action follows [actions/cache](https://github.com/actions/cache/blob/main/ex
 Yarn caching handles both yarn versions: 1 or 2.
 ```yaml
 steps:
-- uses: actions/checkout@v3
-- uses: actions/setup-node@v3
+- uses: actions/checkout@v4
+- uses: actions/setup-node@v4
   with:
     node-version: '14'
     cache: 'yarn'
@@ -130,23 +255,27 @@ steps:
 # NOTE: pnpm caching support requires pnpm version >= 6.10.0
 
 steps:
-- uses: actions/checkout@v3
+- uses: actions/checkout@v4
 - uses: pnpm/action-setup@v2
   with:
     version: 6.32.9
-- uses: actions/setup-node@v3
+- uses: actions/setup-node@v4
   with:
     node-version: '14'
     cache: 'pnpm'
-- run: pnpm install --frozen-lockfile
+- run: pnpm install
 - run: pnpm test
 ```
+
+> **Note**: By default `--frozen-lockfile` option is passed starting from pnpm `6.10.x`. It will be automatically added if you run it on [CI](https://pnpm.io/cli/install#--frozen-lockfile). 
+> If the `pnpm-lock.yaml` file changes then pass `--frozen-lockfile` option.
+
 
 **Using wildcard patterns to cache dependencies**
 ```yaml
 steps:
-- uses: actions/checkout@v3
-- uses: actions/setup-node@v3
+- uses: actions/checkout@v4
+- uses: actions/setup-node@v4
   with:
     node-version: '14'
     cache: 'npm'
@@ -158,8 +287,8 @@ steps:
 **Using a list of file paths to cache dependencies**
 ```yaml
 steps:
-- uses: actions/checkout@v3
-- uses: actions/setup-node@v3
+- uses: actions/checkout@v4
+- uses: actions/setup-node@v4
   with:
     node-version: '14'
     cache: 'npm'
@@ -195,9 +324,9 @@ jobs:
             architecture: x86
     name: Node ${{ matrix.node_version }} - ${{ matrix.architecture }} on ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node_version }}
           architecture: ${{ matrix.architecture }}
@@ -208,8 +337,8 @@ jobs:
 ## Publish to npmjs and GPR with npm
 ```yaml
 steps:
-- uses: actions/checkout@v3
-- uses: actions/setup-node@v3
+- uses: actions/checkout@v4
+- uses: actions/setup-node@v4
   with:
     node-version: '14.x'
     registry-url: 'https://registry.npmjs.org'
@@ -217,7 +346,7 @@ steps:
 - run: npm publish
   env:
     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-- uses: actions/setup-node@v3
+- uses: actions/setup-node@v4
   with:
     registry-url: 'https://npm.pkg.github.com'
 - run: npm publish
@@ -228,8 +357,8 @@ steps:
 ## Publish to npmjs and GPR with yarn
 ```yaml
 steps:
-- uses: actions/checkout@v3
-- uses: actions/setup-node@v3
+- uses: actions/checkout@v4
+- uses: actions/setup-node@v4
   with:
     node-version: '14.x'
     registry-url: <registry url>
@@ -237,7 +366,7 @@ steps:
 - run: yarn publish
   env:
     NODE_AUTH_TOKEN: ${{ secrets.YARN_TOKEN }}
-- uses: actions/setup-node@v3
+- uses: actions/setup-node@v4
   with:
     registry-url: 'https://npm.pkg.github.com'
 - run: yarn publish
@@ -248,8 +377,8 @@ steps:
 ## Use private packages
 ```yaml
 steps:
-- uses: actions/checkout@v3
-- uses: actions/setup-node@v3
+- uses: actions/checkout@v4
+- uses: actions/setup-node@v4
   with:
     node-version: '14.x'
     registry-url: 'https://registry.npmjs.org'
@@ -268,8 +397,8 @@ Below you can find a sample "Setup .yarnrc.yml" step, that is going to allow you
 
 ```yaml
 steps:
-- uses: actions/checkout@v3
-- uses: actions/setup-node@v3
+- uses: actions/checkout@v4
+- uses: actions/setup-node@v4
   with:
     node-version: '14.x'
 - name: Setup .yarnrc.yml
@@ -278,8 +407,14 @@ steps:
     yarn config set npmScopes.my-org.npmAlwaysAuth true
     yarn config set npmScopes.my-org.npmAuthToken $NPM_AUTH_TOKEN
   env:
-    NPM_AUTH_TOKEN: ${{ secrets.YARN_TOKEN }}
+    NPM_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 - name: Install dependencies
   run: yarn install --immutable
 ```
-NOTE: As per https://github.com/actions/setup-node/issues/49 you cannot use `secrets.GITHUB_TOKEN` to access private GitHub Packages within the same organisation but in a different repository.
+
+To access private GitHub Packages within the same organization, go to "Manage Actions access" in Package settings and set the repositories you want to access.
+
+Please refer to the [Ensuring workflow access to your package - Configuring a package's access control and visibility](https://docs.github.com/en/packages/learn-github-packages/configuring-a-packages-access-control-and-visibility#ensuring-workflow-access-to-your-package) for more details.
+
+### always-auth input
+The always-auth input sets `always-auth=true` in .npmrc file. With this option set [npm](https://docs.npmjs.com/cli/v6/using-npm/config#always-auth)/yarn sends the authentication credentials when making a request to the registries.
